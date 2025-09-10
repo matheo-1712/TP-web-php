@@ -14,12 +14,33 @@
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
 
+function render_table(array $rows)
+{
+    if (empty($rows)) return;
+    echo "<table>";
 
+    // Header row
+    echo "<tr>";
+    foreach (array_keys(reset($rows)) as $header) {
+        echo "<th>" . h($header) . "</th>";
+    }
+    echo "</tr>";
 
-
-
-function render_table(array $rows) {
-    var_dump($rows);
+    // Data rows
+    foreach ($rows as $row) {
+        echo "<tr>";
+        foreach ($row as $cell) {
+            echo "<td>";
+            if (is_array($cell)) {
+                echo h(implode(", ", $cell));
+            } else {
+                echo h($cell);
+            }
+            echo "</td>";
+        }
+        echo "</tr>";
+    }
+    echo "</table>";
 }//FinFunction
 
 
@@ -28,8 +49,11 @@ function render_table(array $rows) {
 // Utilisateurs
 $users = [
   ['nom'=>'Anna','age'=>23,'taille_cm'=>165,'poids_kg'=>56,'email'=>'anna@example.org','pays'=>'DE'],
+        ['nom'=>'Anna','age'=>23,'taille_cm'=>165,'poids_kg'=>56,'email'=>'anna@example.org','pays'=>'DE'],
+        ['nom'=>'Anna','age'=>23,'taille_cm'=>165,'poids_kg'=>56,'email'=>'anna@example.org','pays'=>'DE'],
   ['nom'=>'Ben','age'=>31,'taille_cm'=>178,'poids_kg'=>82,'email'=>'ben@example.org','pays'=>'DE'],
   ['nom'=>'Aya','age'=>27,'taille_cm'=>160,'poids_kg'=>50,'email'=>'aya@example.org','pays'=>'FR'],
+        ['nom'=>'Aya','age'=>27,'taille_cm'=>160,'poids_kg'=>50,'email'=>'aya@example.org','pays'=>'FR'],
   ['nom'=>'Luca','age'=>29,'taille_cm'=>182,'poids_kg'=>79,'email'=>'luca@example.org','pays'=>'IT'],
   ['nom'=>'Sara','age'=>25,'taille_cm'=>168,'poids_kg'=>60,'email'=>'sara@example.org','pays'=>'ES'],
   ['nom'=>'Tom','age'=>34,'taille_cm'=>185,'poids_kg'=>88,'email'=>'tom@example.org','pays'=>'UK'],
@@ -105,7 +129,7 @@ $users = array_map(function ($u) {
     $u['initiales'] = substr($u['nom'], 0, 1);
     return $u;
 }, $users);
-// render_table($users);
+render_table($users);
 
 ?>
 
@@ -116,7 +140,7 @@ $users = array_map(function ($u) {
     $u['imc'] = round($u['poids_kg'] / ($u['taille_cm'] / 100) ** 2, 1);
     return $u;
 }, $users);
-// render_table($users);
+render_table($users);
 ?>
 
 <h2>Ex. 3 — Filtrage (array_filter)</h2>
@@ -137,7 +161,7 @@ $students = array_filter($students, function ($student) {
     return $student['moyenne'] >= 12;
 });
 
-// render_table($students);
+render_table($students);
 ?>
 
 <h2>Ex. 4 — Agrégations (array_reduce)</h2>
@@ -147,43 +171,75 @@ $total = array_reduce($sales, function ($total, $sale) {
     return $total + $sale['montant'];
 }, 0);
 $moyenne = $total / count($sales);
-// echo '<p>Total: '.number_format($total, 2). '</p>' . '<p>Moyenne: ' .number_format($moyenne, 2).'</p>';
+echo '<p>Total: '.number_format($total, 2). '</p>' . '<p>Moyenne: ' .number_format($moyenne, 2).'</p>';
 ?>
 
 <h2>Ex. 5 — Regroupement par clé</h2>
 <p>Regrouper $users par <code>pays</code> et compter le nombre d’utilisateurs par pays (utiliser <code>array_reduce</code> ou <code>array_count_values</code> après un <code>array_column</code>).</p>
 <?php
-// TODO: 
+$users_by_country = array_reduce($users, function ($users_by_country, $user) {
+    $country = $user['pays'];
+    $users_by_country[$country][] = $user;
+    return $users_by_country;
+});
+
+// Compter les utilisateurs par pays et l'afficher
+$user_countries = (array_count_values(array_column($users, 'pays')));
+// Affiche proprement les pays des utilisateurs
+foreach ($user_countries as $country => $count) {
+    echo '<p>' . $country . ': ' . $count . '</p>';
+}
+
+// var_dump($users_by_country);
 ?>
 
 <h2>Ex. 6 — Déduplication & doublons</h2>
 <p>À partir d’une liste d’emails (dupliquez-en quelques-uns), afficher les doublons détectés (indices et valeurs) en utilisant <code>array_count_values</code>.</p>
 <?php
-// TODO
+$usersMail = array_count_values(array_column($users, 'email'));
+foreach ($usersMail as $email => $count) {
+    if ($count > 1) {
+        echo '<p>' . $email . ' : ' . $count . ' occurences</p>';
+    }
+}
 ?>
 
 <h2>Ex. 7 — Tri composé</h2>
 <p>Trier $products par <code>prix</code> croissant puis, à prix égal, par <code>note</code> décroissante (via <code>usort</code>).</p>
 <?php
-// TODO
+usort($products, function ($a, $b){
+    $result = $a['prix'] <=> $b['prix'];
+    if ($result === 0) {
+        $result = $b['note'] <=> $a['note'];
+    }
+    return $result;
+});
+render_table($products);
 ?>
 
 <h2>Ex. 8 — Pagination simple (array_chunk)</h2>
 <p>Découper $users en pages de 2 et afficher la page 2 (si elle existe).</p>
 <?php
-// TODO: $pages = array_chunk($users, 2); render_table($pages[1] ?? []);
+$pages = array_chunk($users, 2);
+render_table($pages[1] ?? []);
+render_table($pages);
 ?>
 
 <h2>Ex. 9 — Fusion de configuration</h2>
 <p>Fusionner $config_def et $config_user en conservant les sous-clés (utiliser une fusion récursive ; afficher le résultat).</p>
 <?php
-// TODO: $cfg = ...; echo '<pre>'.h(print_r($cfg,true)).'</pre>';
+$cfg = array_replace_recursive($config_def, $config_user);
+echo '<pre>' . (print_r($cfg, true)) . '</pre>';
 ?>
 
 <h2>Ex. 10 — Génération de slug</h2>
 <p>À partir de $titles, produire des slugs (minuscules, espaces → «-», accents simplifiés) avec <code>array_map</code>.</p>
 <?php
-// TODO: $slugs = array_map(..., $titles); render_table(array_map(fn($t,$s)=>['title'=>$t,'slug'=>$s], $titles, $slugs));
+$titles = array_map(function ($title) {
+    // Crée un tableau associatif pour chaque titre
+    return ['slug' => strtolower(str_replace(' ', '-', iconv('UTF-8', 'ASCII//TRANSLIT', $title)))];
+}, $titles);
+render_table($titles);
 ?>
 
 </body>
