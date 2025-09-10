@@ -137,13 +137,17 @@ $students = array_filter($students, function ($student) {
     return $student['moyenne'] >= 12;
 });
 
-render_table($students);
+// render_table($students);
 ?>
 
 <h2>Ex. 4 — Agrégations (array_reduce)</h2>
 <p>À partir de $sales, calculer <code>total</code> et <code>moyenne</code> des montants (2 décimales).</p>
 <?php
-// TODO: 
+$total = array_reduce($sales, function ($total, $sale) {
+    return $total + $sale['montant'];
+}, 0);
+$moyenne = $total / count($sales);
+// echo '<p>Total: '.number_format($total, 2). '</p>' . '<p>Moyenne: ' .number_format($moyenne, 2).'</p>';
 ?>
 
 <h2>Ex. 5 — Regroupement par clé</h2>
